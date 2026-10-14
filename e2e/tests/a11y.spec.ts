@@ -20,6 +20,14 @@ const SCHEMES = ['light', 'dark'] as const;
 const RECORDING = process.env.BASELINE === '1';
 
 async function scan(page: Page, testInfo: TestInfo, route: string, scheme: string) {
+  // Measure the resting state, not a transition. The share dialog fades in over
+  // 180ms, and on a slow CI runner axe sampled it mid-fade and reported the
+  // dialog's text as low contrast at partial opacity -- a number about the
+  // animation, not about the design. Waiting for running animations to finish
+  // keeps the check strict without excluding anything.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) => animation.playState !== 'running'),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();

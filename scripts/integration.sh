@@ -33,6 +33,12 @@ export REDIS_URL="${REDIS_URL:-redis://localhost:6386}"
 export SYNC_BASE_URL="${SYNC_BASE_URL:-http://localhost:4100}"
 export SYNC_BASE_URL_2="${SYNC_BASE_URL_2:-http://localhost:4101}"
 
+# Both apps import workspace packages through their dist/ (the sync replicas run
+# under tsx, the API suite under vitest), and a CI checkout has none: the second
+# CI run died with ERR_MODULE_NOT_FOUND on @docs/doc-access. A local run that
+# had already built them hid it. Turbo makes this a cache hit when nothing changed.
+pnpm exec turbo run build --filter=@docs/sync^... --filter=@docs/api^... --output-logs=errors-only >/dev/null
+
 if [[ -z "${AUTH_SECRET:-}" ]]; then
   echo "AUTH_SECRET is not set. The sync server refuses to boot without it, and every" >&2
   echo "handshake would fail with a signature error that looks like a broken test." >&2
