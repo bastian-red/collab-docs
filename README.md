@@ -161,10 +161,3 @@ packages/shared     zod contracts, roles, cursor colours, service tokens
 e2e                 Playwright
 infra               Dockerfiles and docker-compose.yml
 ```
-
-## Not deployed, on purpose
-
-This is a portfolio project published on GitHub and hosted nowhere. Operability is demonstrated in
-the repository: `/health` on both services checks Postgres, Redis and (on the sync server) a real
-pub/sub round trip; `/status` renders both; every service has a Dockerfile with a healthcheck;
-compose brings the whole stack up; and CI builds the images.
