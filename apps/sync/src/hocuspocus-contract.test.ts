@@ -200,6 +200,60 @@ describe('the Persistence extension inside a real Hocuspocus', () => {
 
     await direct.disconnect();
   });
+
+  it('keeps recording a document whose unload is abandoned because a client arrived', async () => {
+    // The library behaviour persistence.ts now depends on, pinned: unloadDocument
+    // runs the beforeUnloadDocument hooks, THEN re-checks for connections, and
+    // abandons the unload if one arrived meanwhile. The gate below holds the hooks
+    // open the way @hocuspocus/extension-redis's network round trip does, so the
+    // second client lands inside that window deterministically. Before the fix,
+    // the edit it makes was applied and never appended.
+    const repository = new MemoryDocumentRepository();
+    repository.create(DOCUMENT);
+    const persistence = new Persistence({
+      repository,
+      versions: versionStore(),
+      compaction: { afterUpdates: 1000, afterSeconds: 100_000 },
+      versionPolicy: { intervalSeconds: 300, maxPerDocument: 50 },
+      documentMaxBytes: 5_242_880,
+      log: () => {
+        /* quiet */
+      },
+    });
+
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let unloadStarted = false;
+    const slowUnload = {
+      extensionName: 'slow-unload',
+      async beforeUnloadDocument() {
+        unloadStarted = true;
+        await gate;
+      },
+    };
+
+    const instance = server([persistence as unknown as Record<string, unknown>, slowUnload]);
+    const first = await instance.openDirectConnection(DOCUMENT);
+    const leaving = first.disconnect();
+    await expect.poll(() => unloadStarted).toBe(true);
+
+    // A client arrives while the unload hooks are still running.
+    const second = await instance.openDirectConnection(DOCUMENT);
+    release();
+    await leaving;
+    await settle();
+    expect(instance.documents.has(DOCUMENT), 'the unload was abandoned').toBe(true);
+
+    await second.transact((document) => {
+      document.getText('body').insert(0, 'typed by the client who arrived');
+    });
+    await settle();
+
+    expect(repository.logSize(DOCUMENT)).toBe(1);
+    await second.disconnect();
+  });
 });
 
 describe('the configuration this server depends on', () => {

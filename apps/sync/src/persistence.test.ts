@@ -264,19 +264,42 @@ describe('the update listener', () => {
     expect(repository.logSize(DOCUMENT)).toBe(2);
   });
 
-  it('stops recording when the document unloads', async () => {
-    // A listener left attached holds the Y.Doc alive, so a server that has seen
-    // a thousand documents is holding a thousand of them.
+  it('stops recording when the document is destroyed', async () => {
+    // Hocuspocus destroys the Y.Doc as the last step of a real unload. A listener
+    // left on it afterwards would be a leak; the 'destroy' event is the one
+    // signal that the unload actually happened (see the next test for why
+    // beforeUnloadDocument is not).
     repository.create(DOCUMENT);
     const persistence = build();
     const document = new Y.Doc();
     await persistence.afterLoadDocument(payload(document));
     await persistence.beforeUnloadDocument(payload(document));
+    document.destroy();
 
-    type(document, 'after unload', fromConnection(AUTHOR));
+    type(document, 'after destroy', fromConnection(AUTHOR));
     await settle();
 
     expect(repository.logSize(DOCUMENT)).toBe(0);
+  });
+
+  it('keeps recording when Hocuspocus abandons an unload because a client arrived', async () => {
+    // The hole CI found. Hocuspocus 4.6 `unloadDocument` runs the
+    // beforeUnloadDocument hooks FIRST and only then re-checks
+    // shouldUnloadDocument; a client that connected while the hooks awaited (the
+    // Redis extension's does network I/O) makes it abandon the unload and keep
+    // the document live. Detaching in beforeUnloadDocument left that live
+    // document accepting and broadcasting edits that were never logged.
+    repository.create(DOCUMENT);
+    const persistence = build();
+    const document = new Y.Doc();
+    await persistence.afterLoadDocument(payload(document));
+    await persistence.beforeUnloadDocument(payload(document));
+    // ...and the unload is abandoned: no destroy.
+
+    type(document, 'typed by the client who arrived', fromConnection(AUTHOR));
+    await settle();
+
+    expect(repository.logSize(DOCUMENT)).toBe(1);
   });
 
   it('attaches exactly one listener however often afterLoadDocument runs', async () => {
@@ -323,6 +346,7 @@ describe('the update listener', () => {
     const arriving = new Y.Doc();
     await persistence.afterLoadDocument(payload(arriving));
     await persistence.beforeUnloadDocument(payload(leaving));
+    leaving.destroy();
 
     type(arriving, 'after the old instance left', fromConnection(AUTHOR));
     type(leaving, 'the old instance is gone', fromConnection(AUTHOR));

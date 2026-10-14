@@ -110,8 +110,8 @@ export class Persistence implements Extension {
    * whatever entry the name pointed at. CI found it through the integration
    * lane's file order; `persistence.test.ts` now provokes both halves directly.
    *
-   * A WeakMap, so an instance Hocuspocus drops without unloading (a crash path)
-   * does not keep its listener reachable from here.
+   * A WeakMap, so an instance Hocuspocus drops without destroying (a crash
+   * path) does not keep its listener reachable from here.
    */
   private readonly loaded = new WeakMap<Y.Doc, UpdateListener>();
   private readonly now: () => number;
@@ -161,24 +161,38 @@ export class Persistence implements Extension {
    */
   async afterLoadDocument(payload: afterLoadDocumentPayload): Promise<void> {
     const documentId = payload.documentName;
-    if (this.loaded.has(payload.document)) return;
+    const document = payload.document;
+    if (this.loaded.has(document)) return;
 
     const listener: UpdateListener = (update, origin) => {
       void this.append(documentId, update, origin);
     };
-    payload.document.on('update', listener);
-    this.loaded.set(payload.document, listener);
+    document.on('update', listener);
+    this.loaded.set(document, listener);
+    // Stop recording when the instance is DESTROYED, which Hocuspocus does as the
+    // last step of an unload that really happens. See beforeUnloadDocument for
+    // why that hook is the wrong moment.
+    document.once('destroy', () => {
+      document.off('update', listener);
+      this.loaded.delete(document);
+    });
   }
 
-  /** Stop recording, so a document that unloads does not leak a listener holding it alive. */
+  /**
+   * Deliberately does not stop recording.
+   *
+   * Hocuspocus 4.6 `unloadDocument` runs the beforeUnloadDocument hooks FIRST
+   * and only then re-checks `shouldUnloadDocument`. A client that connects while
+   * the hooks are awaiting -- `@hocuspocus/extension-redis` does network I/O in
+   * its own -- makes it abandon the unload and keep this very Y.Doc live. When
+   * the listener was detached here, that live document went on accepting and
+   * broadcasting edits that were never appended: the one failure this module
+   * exists to rule out. CI's integration lane hit it on a reconnect inside the
+   * unload window; `persistence.test.ts` provokes it directly. The listener now
+   * goes when the document is destroyed (afterLoadDocument).
+   */
   async beforeUnloadDocument(payload: { documentName: string; document: Y.Doc }): Promise<void> {
-    const listener = this.loaded.get(payload.document);
-    if (listener === undefined) return;
-    payload.document.off('update', listener);
-    this.loaded.delete(payload.document);
-    // `wounded` stays keyed by name, deliberately left alone here: if a newer
-    // instance of this document is already live, a hole recorded against it must
-    // keep blocking compaction until one of its own appends succeeds.
+    void payload;
   }
 
   /**
