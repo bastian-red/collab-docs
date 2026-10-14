@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Node16, not CommonJS + Node. The classic `Node` resolver predates the
+    // `exports` field and cannot see a subpath: `@docs/shared/server` resolves at
+    // runtime and fails to typecheck, with TypeScript reporting that the types
+    // exist but "could not be resolved under your current moduleResolution
+    // setting". That subpath is not optional — it is the boundary that keeps
+    // `node:crypto` out of the browser bundle.
+    //
+    // Emit is unchanged: none of these packages sets `"type": "module"`, so Node16
+    // compiles them as CommonJS, and relative imports still need no file
+    // extension.
+    //
+    // CommonJS emit is also why no package here may depend on an ESM-only
+    // library. `require()` of one throws ERR_REQUIRE_ESM at runtime rather than
+    // at build, so the failure lands in a running sync server instead of in CI.
+    // Checked before committing to the stack rather than after: `yjs`, `lib0`,
+    // `y-protocols`, `@hocuspocus/server` and `@hocuspocus/extension-redis` all
+    // declare `"type": "module"` but every one of them ships a `require`
+    // condition, so all five load from CommonJS. `y-protocols` is the one with a
+    // sharp edge -- it has no `main` at all, only subpath exports
+    // (`y-protocols/awareness`), which the classic `Node` resolver cannot see.
+    //
+    // The related trap that Node16 does NOT solve: loading `yjs` twice in one
+    // process, once as ESM and once as CommonJS, produces two module instances,
+    // and Yjs uses `instanceof` internally. Everything server-side here is
+    // CommonJS and the browser gets the ESM build through Next, so the two never
+    // meet in one process. Do not "modernise" one package to ESM in isolation.
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}

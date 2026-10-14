@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=Karla:wght@400;500;600&family=Red+Hat+Mono:wght@400&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #1a6b3c; } a:hover { color: #13512d; }
+    .ui { font-family: Karla, ui-sans-serif, system-ui, sans-serif; }
+    .prose { font-family: Spectral, ui-serif, Georgia, serif; }
+    .mono { font-family: 'Red Hat Mono', ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</helmet>
+
+<div class="ui" style="width: 1440px; height: 900px; background: #e4e8e0; color: #191d18; display: flex; overflow: hidden;">
+
+  <!-- the document, showing a diff against the selected version -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: #eff2ec; border-bottom: 1px solid #d0d6cb; flex-shrink: 0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      <span style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">Migration plan: nightly batch to streaming</span>
+      <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #eff2ec; border: 1px solid #767e72; margin-left: 4px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="9"></circle></svg>
+        <span style="font-size: 12.5px; font-weight: 600; color: #4d554a;">Viewing version 12</span>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; overflow: hidden; display: flex; justify-content: center; padding: 32px 0 0 0;">
+      <div style="width: 720px; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 2px rgba(25,29,24,0.10), 0 12px 32px rgba(25,29,24,0.11); padding: 52px 72px 80px 72px;">
+        <h1 class="prose" style="margin: 0 0 26px 0; font-size: 30px; font-weight: 600; line-height: 1.22; letter-spacing: -0.015em;">Migration plan: nightly batch to streaming</h1>
+
+        <p class="prose" style="margin: 0 0 18px 0; font-size: 17px; line-height: 1.72;">The nightly batch has been the reconciliation path since 2019, and every incident review since March has ended at the same sentence: the ledger is correct by morning and wrong all afternoon.</p>
+
+        <p class="prose" style="margin: 0 0 18px 0; font-size: 17px; line-height: 1.72;">
+          <span style="background: #fbe3dd; box-shadow: 0 0 0 1px #a3231c; border-radius: 2px; text-decoration: line-through; text-decoration-color: #a3231c; text-decoration-thickness: 1.5px;">We will cut over in one weekend and keep a rollback script ready.</span>
+        </p>
+
+        <p class="prose" style="margin: 0 0 18px 0; font-size: 17px; line-height: 1.72;">
+          <span style="background: #dceee2; box-shadow: 0 0 0 1px #1a6b3c; border-radius: 2px;">We keep the batch running in parallel for two full quarters. It costs about forty euros a month in compute and it is the only way to answer the question an auditor will actually ask, which is whether the two paths ever disagreed.</span>
+        </p>
+
+        <h2 class="prose" style="margin: 28px 0 10px 0; font-size: 21px; font-weight: 600;">Rollout</h2>
+        <ol class="prose" style="margin: 0; padding-left: 22px; font-size: 17px; line-height: 1.72;">
+          <li style="margin-bottom: 6px;">Shadow writes, no reads. Four weeks.</li>
+          <li>Reads behind a per-tenant flag, starting with internal tenants.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- history panel -->
+  <div style="width: 372px; flex-shrink: 0; background: #eff2ec; border-left: 1px solid #d0d6cb; display: flex; flex-direction: column; overflow: hidden;">
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 18px 20px 14px 20px; border-bottom: 1px solid #d0d6cb;">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600;">Version history</h2>
+      <div style="flex-grow: 1;"></div>
+      <button style="font-family: inherit; font-size: 12.5px; font-weight: 600; color: #ffffff; background: #1a6b3c; border: 1px solid #1a6b3c; border-radius: 12px; padding: 7px 12px; cursor: pointer;">Save a version</button>
+    </div>
+
+    <!-- diff legend: shape and word, not only colour -->
+    <div style="display: flex; align-items: center; gap: 16px; padding: 11px 20px; background: #ffffff; border-bottom: 1px solid #d0d6cb;">
+      <div style="display: flex; align-items: center; gap: 7px;">
+        <span style="width: 13px; height: 13px; border-radius: 3px; background: #dceee2; box-shadow: 0 0 0 1px #1a6b3c; display: inline-block;"></span>
+        <span style="font-size: 12px; color: #191d18;">Added since v12</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 7px;">
+        <span style="width: 13px; height: 13px; border-radius: 3px; background: #fbe3dd; box-shadow: 0 0 0 1px #a3231c; display: inline-block; position: relative;"><span style="position: absolute; left: 1px; right: 1px; top: 5.5px; height: 1.5px; background: #a3231c;"></span></span>
+        <span style="font-size: 12px; color: #191d18;">Removed</span>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; overflow: hidden; padding: 8px;">
+
+      <div style="padding: 12px 13px; border-radius: 12px; display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 13.5px; font-weight: 600;">Now</span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">v14</span>
+        </div>
+        <span style="font-size: 12.5px; color: #4d554a;">Bruno Salas, 4 minutes ago</span>
+      </div>
+
+      <div style="padding: 12px 13px; border-radius: 12px; display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 13.5px; font-weight: 500;">Today, 11:02</span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">v13</span>
+          <span style="flex-grow: 1;"></span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">38.4 KiB</span>
+        </div>
+        <span style="font-size: 12.5px; color: #4d554a;">Automatic</span>
+      </div>
+
+      <!-- selected -->
+      <div style="padding: 12px 13px; border-radius: 12px; background: #dceee2; border: 1px solid #1a6b3c; display: flex; flex-direction: column; gap: 7px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 13.5px; font-weight: 600; color: #14562f;">Before the parallel-run rewrite</span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span class="mono" style="font-size: 11px; color: #14562f;">v12</span>
+          <span style="font-size: 12.5px; color: #14562f;">Ana Requena, yesterday 17:40</span>
+          <span style="flex-grow: 1;"></span>
+          <span class="mono" style="font-size: 11px; color: #14562f;">36.9 KiB</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 7px; margin-top: 4px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#14562f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4v6h6"></path><path d="M5 10a8 8 0 113 9"></path></svg>
+          <span style="font-size: 12.5px; font-weight: 600; color: #14562f;">Labelled, never pruned</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button style="font-family: inherit; font-size: 12.5px; font-weight: 600; color: #ffffff; background: #1a6b3c; border: 1px solid #1a6b3c; border-radius: 12px; padding: 7px 13px; cursor: pointer;">Restore this version</button>
+          <button style="font-family: inherit; font-size: 12.5px; font-weight: 500; color: #14562f; background: transparent; border: 1px solid #1a6b3c; border-radius: 12px; padding: 7px 13px; cursor: pointer;">Copy</button>
+        </div>
+      </div>
+
+      <div style="padding: 12px 13px; border-radius: 12px; display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 13.5px; font-weight: 500;">Yesterday, 15:05</span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">v11</span>
+          <span style="flex-grow: 1;"></span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">34.2 KiB</span>
+        </div>
+        <span style="font-size: 12.5px; color: #4d554a;">Automatic</span>
+      </div>
+
+      <div style="padding: 12px 13px; border-radius: 12px; display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-size: 13.5px; font-weight: 500;">Yesterday, 14:32</span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">v10</span>
+          <span style="flex-grow: 1;"></span>
+          <span class="mono" style="font-size: 11px; color: #4d554a;">33.8 KiB</span>
+        </div>
+        <span style="font-size: 12.5px; color: #4d554a;">Automatic</span>
+      </div>
+
+    </div>
+
+    <div style="padding: 13px 20px; border-top: 1px solid #d0d6cb; background: #ffffff; display: flex; gap: 9px; align-items: flex-start;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a4b00" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><path d="M12 3l9 16H3z"></path><path d="M12 10v4M12 17h.01"></path></svg>
+      <span style="font-size: 12px; line-height: 1.5; color: #191d18;">Restoring replaces the whole document. An edit somebody makes during the restore is inside the replaced range and will be lost.</span>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,243 @@
+// collab-docs schema.
+//
+// Three things about this file are load-bearing and are explained where they
+// appear rather than here:
+//
+//   1. `documents.state` is a CHECKPOINT, not the document. The document is the
+//      checkpoint plus `document_updates` replayed in `seq` order. See
+//      docs/SPECS.md section 3.
+//   2. `seq` is allocated by `UPDATE documents SET next_seq = next_seq + 1
+//      RETURNING`, which takes a row lock. That is the only reason two sync
+//      replicas appending at the same instant produce a gapless total order.
+//   3. Everything Prisma cannot express lives in
+//      migrations/*_collab_invariants/migration.sql, and the constraint NAMES are
+//      exported from src/index.ts so catch blocks match on a name rather than on
+//      message text.
+//
+// `prisma migrate dev` is deliberately `--create-only` in package.json: the raw
+// migration carries CHECK constraints, a partial unique index and a generated
+// column, and an auto-applied migration would be written without a chance to
+// keep them.
+
+generator client {
+  // Generated INTO the package, not into node_modules. `pnpm deploy --prod` in a
+  // Docker build rebuilds node_modules and drops a client generated there, and
+  // the failure appears only in the image.
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Migrations cannot run through a transaction-mode pooler. Locally both names
+  // point at the same server; the split exists so it can be made without a code
+  // change.
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+/// Who may do what to a document. Ordered strongest first; `services/doc-access`
+/// holds the matrix and is the only place that interprets it.
+enum DocumentRole {
+  OWNER
+  EDITOR
+  COMMENTER
+  VIEWER
+}
+
+/// Why a version exists. Only AUTO versions are ever pruned -- deleting the thing
+/// a person deliberately named is the one behaviour nobody forgives.
+enum VersionKind {
+  AUTO
+  MANUAL
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  ownedFolders     Folder[]
+  memberships      DocumentMember[]
+  authoredUpdates  DocumentUpdate[]
+  authoredVersions DocumentVersion[]
+  createdLinks     ShareLink[]
+
+  @@map("users")
+}
+
+model Folder {
+  id      String  @id @default(cuid())
+  name    String
+  ownerId String  @map("owner_id")
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// One level of nesting is all the product offers, but the column allows a
+  /// tree, so `CHECK (id <> parent_id)` stops the one-node cycle and
+  /// `services/doc-access` caps the depth. A cycle here is not a bad render, it
+  /// is a breadcrumb walk that never terminates.
+  parentId String? @map("parent_id")
+  parent   Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderTree")
+
+  documents Document[]
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@unique([ownerId, parentId, name])
+  @@index([ownerId])
+  @@map("folders")
+}
+
+model Document {
+  id       String  @id @default(cuid())
+  title    String
+  folderId String? @map("folder_id")
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  /// The compaction of `document_updates` up to and including `state_seq`. It is
+  /// NOT the document on its own: loading applies this and then replays every
+  /// update above `state_seq`. A new document carries the encoded state of an
+  /// empty Y.Doc rather than null, so no read site has to branch.
+  state Bytes
+
+  /// The highest `seq` folded into `state`. Everything above it is still in the
+  /// log. `CHECK (next_seq > state_seq)` in the invariants migration is what
+  /// stops a compaction claiming to have folded in updates that do not exist.
+  stateSeq BigInt @default(0) @map("state_seq")
+
+  /// The allocator. Read and incremented in one `UPDATE ... RETURNING` per
+  /// append, which is where the row lock comes from.
+  nextSeq BigInt @default(1) @map("next_seq")
+
+  /// Plain text of the document, refreshed at compaction, so full-text search
+  /// costs a GIN lookup rather than materialising a CRDT per query. Never read
+  /// as the document: it is a lossy projection kept for search alone.
+  contentText String @default("") @map("content_text")
+
+  // There is deliberately no `search` COLUMN here, and none in the database.
+  // Full-text search runs off a GIN index on an EXPRESSION over `title` and
+  // `content_text` (see the invariants migration). A stored `tsvector` column
+  // would have to be `Unsupported()` here, and Prisma then reads its
+  // GENERATED ALWAYS expression as a column default and emits
+  // `ALTER COLUMN "search" DROP DEFAULT` on the next migration -- quietly
+  // turning it into an ordinary column that never updates again. Measured, not
+  // assumed: `prisma migrate diff --from-url` printed exactly that.
+  //
+  // Nothing is lost. `ts_headline` takes the original TEXT rather than a
+  // tsvector, so the snippet never needed the column, and the index serves the
+  // match.
+
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  updates  DocumentUpdate[]
+  versions DocumentVersion[]
+  members  DocumentMember[]
+  links    ShareLink[]
+
+  @@index([folderId])
+  @@index([updatedAt(sort: Desc)])
+  @@map("documents")
+}
+
+/// The append-only log. This is the durable copy of the document; `documents.state`
+/// is a compaction of it. Nothing on the write path to this table is debounced,
+/// which is the entire answer to "a crash loses everything since the last write".
+model DocumentUpdate {
+  documentId String   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// Allocated from `documents.next_seq`. Dense and gapless per document, which
+  /// is what makes "compact everything up to N" a well-defined statement.
+  seq BigInt
+
+  /// One Yjs update, exactly as it arrived. Applying it is idempotent and
+  /// commutative, which is why every crash window during compaction closes on
+  /// its own -- see docs/SPECS.md section 3.2.
+  update Bytes
+
+  /// Nullable: the writer may have been deleted since, and losing a name must
+  /// never mean losing the update.
+  authorId String? @map("author_id")
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([documentId, seq])
+  @@index([documentId, createdAt])
+  @@map("document_updates")
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// Version number within the document, dense from 1. `n`, never `seq`: they
+  /// are both integers and they are never interchangeable.
+  n Int
+
+  /// A full `Y.encodeStateAsUpdate`, not a diff. A chain of diffs is a chain of
+  /// things that can break, and restoring version 3 should not depend on
+  /// versions 4 through 12 being intact.
+  state Bytes
+
+  kind  VersionKind @default(AUTO)
+  label String?
+
+  authorId String? @map("author_id")
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([documentId, n])
+  @@index([documentId, createdAt(sort: Desc)])
+  @@map("document_versions")
+}
+
+model DocumentMember {
+  documentId String   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role     DocumentRole @default(VIEWER)
+  addedAt  DateTime     @default(now()) @map("added_at")
+
+  @@id([documentId, userId])
+  @@index([userId])
+  @@map("document_members")
+}
+
+/// A link that carries a role. The role it carries can never be OWNER: a link is
+/// forwardable, and a forwardable link that hands away the document is not a
+/// sharing feature, it is a way to lose one.
+model ShareLink {
+  id         String   @id @default(cuid())
+  documentId String   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  /// The secret in the URL. Unique so a lookup is an index hit, and long enough
+  /// that guessing is not a strategy; generated with `crypto.randomBytes`.
+  token String @unique
+
+  role DocumentRole
+
+  /// Null means it never expires, which the UI does not offer but the column
+  /// allows. `revoked_at` is a tombstone rather than a delete, so "this link was
+  /// revoked" and "this link never existed" stay distinguishable in an audit.
+  expiresAt DateTime? @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  createdById String? @map("created_by_id")
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([documentId])
+  @@map("share_links")
+}

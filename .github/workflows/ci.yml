@@ -1,0 +1,234 @@
+name: CI
+
+# Six jobs, one per lane (docs/SPECS.md 9). Each proves something the others
+# cannot: the unit lane cannot see turbo stripping the environment, the e2e lane
+# supplies its own environment and so cannot see it either, and only dev-smoke
+# boots the documented `pnpm dev`.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, typecheck, contracts, secrets, format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, so gitleaks scans every commit and not just the tip.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      # Self-tests first: a checker that has silently stopped checking passes
+      # everything, and only a check on the checker can see that.
+      - run: pnpm env:contract:self-test
+      - run: pnpm env:contract
+      - run: pnpm scan:invisible:self-test
+      - run: pnpm scan:invisible
+      - name: Install gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          GITLEAKS_VERSION=8.30.1
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      - run: pnpm run scan:secrets
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm exec prettier --check "**/*.{ts,tsx,js,cjs,mjs,json}"
+
+  unit:
+    name: Unit tests (UTC and Pacific/Kiritimati)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm test
+      # Twice, the second time at UTC+14: a formatter that assumed UTC passes the
+      # first run and fails here.
+      - run: pnpm test
+        env:
+          TZ: Pacific/Kiritimati
+
+  integration:
+    name: Integration (two sync replicas, drift, seed check)
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://collab:collab@localhost:5440/collab?schema=public
+      DIRECT_DATABASE_URL: postgresql://collab:collab@localhost:5440/collab?schema=public
+      REDIS_URL: redis://localhost:6386
+      AUTH_SECRET: ci-secret-at-least-32-characters-long
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: collab
+          POSTGRES_PASSWORD: collab
+          POSTGRES_DB: collab
+        ports: ['5440:5432']
+        options: >-
+          --health-cmd "pg_isready -U collab -d collab"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6386:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm db:deploy
+      - run: ./scripts/db-drift.sh
+      - run: ./scripts/seed-check.sh
+      - run: ./scripts/integration.sh
+
+  dev-smoke:
+    # Deliberately NO job-level `env:` block. The point of this job is that the
+    # only configuration reaching the processes is the .env file, through
+    # scripts/dev.sh, the way it does on a reader's machine.
+    name: pnpm dev serves the app
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: collab
+          POSTGRES_PASSWORD: collab
+          POSTGRES_DB: collab
+        ports: ['5440:5432']
+        options: >-
+          --health-cmd "pg_isready -U collab -d collab"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6386:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Set up .env the way the README says
+        run: |
+          cp .env.example .env
+          sed -i "s|^AUTH_SECRET=|AUTH_SECRET=$(openssl rand -base64 32)|" .env
+      - run: pnpm db:generate
+      - run: pnpm db:deploy
+      - run: pnpm db:seed
+      # Cold runner, nothing built: dev's ^build dependency has to do it all.
+      - run: WAIT_SECONDS=240 ./scripts/dev-smoke.sh
+
+  e2e:
+    name: E2E (Playwright, Chromium + Firefox, axe in both schemes)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: collab
+          POSTGRES_PASSWORD: collab
+          POSTGRES_DB: collab
+        ports: ['5440:5432']
+        options: >-
+          --health-cmd "pg_isready -U collab -d collab"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6386:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @docs/e2e exec playwright install --with-deps chromium firefox
+      - run: ./scripts/e2e.sh
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: e2e/test-results
+          retention-days: 7
+
+  images:
+    name: Docker images build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/Dockerfile.api
+          push: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: sync
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/Dockerfile.sync
+          push: false
+          cache-from: type=gha,scope=sync
+          cache-to: type=gha,mode=max,scope=sync
+      - name: web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/Dockerfile.web
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web

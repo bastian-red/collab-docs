@@ -1,0 +1,175 @@
+# The datastores are always on; the application services live behind the `app`
+# profile so `docker compose up -d` gives you what `pnpm dev` needs and nothing
+# else.
+#
+#   docker compose -f infra/docker-compose.yml up -d              # postgres + redis
+#   docker compose -f infra/docker-compose.yml --profile app up -d --build
+
+# Explicit, and not optional. Without it Compose derives the project name from the
+# containing directory, which is `infra` in all seven projects in this portfolio,
+# and bringing up a second stack evicts the first one's containers AND its
+# volumes.
+name: collab
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: collab-postgres
+    environment:
+      POSTGRES_USER: collab
+      POSTGRES_PASSWORD: collab
+      POSTGRES_DB: collab
+    # 5432 is the dev host's own PostgreSQL, 5433-5438 are the six sibling
+    # portfolio stacks, and 5439 is held by an unrelated stack on the machine
+    # this was built on, so this one takes 5440 and every URL in .env.example
+    # matches.
+    ports:
+      - '5440:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U collab -d collab']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: collab-redis
+    # appendonly so a restart does not silently drop the health-probe channel's
+    # subscribers along with everything else. Redis here carries the sync
+    # replicas' relay, not a cache.
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6386:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- The application, behind the `app` profile --------------------------------
+  #
+  #   docker compose -f infra/docker-compose.yml --profile app up -d --build
+  #
+  # Inside the network the services reach the datastores by name, so the URLs
+  # below override the localhost ones .env carries for `pnpm dev`. Everything else
+  # (AUTH_SECRET, the tuning knobs) comes from ../.env unchanged.
+
+  # One-shot: apply migrations and seed the demo workspace, then exit. Built from
+  # the api Dockerfile's `build` stage, which still has the Prisma CLI and tsx
+  # (the runtime image deliberately has neither). The apps wait for it to exit 0,
+  # so they never boot against a schema that is behind the code.
+  migrate:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+      target: build
+    image: collab-migrate
+    container_name: collab-migrate
+    profiles: ['app']
+    env_file:
+      - ../.env
+    environment: &datastores
+      DATABASE_URL: postgresql://collab:collab@postgres:5432/collab?schema=public
+      DIRECT_DATABASE_URL: postgresql://collab:collab@postgres:5432/collab?schema=public
+      REDIS_URL: redis://redis:6379
+    command: ['sh', '-c', 'pnpm --filter @docs/db exec prisma migrate deploy && pnpm --filter @docs/db run seed']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    image: collab-api
+    container_name: collab-api
+    profiles: ['app']
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *datastores
+      PORT: ''
+      API_PORT: '4000'
+    ports:
+      - '4000:4000'
+    depends_on: &after-migrate
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Two replicas of one image. `PORT` beats `SYNC_PORT` in apps/sync/src/config.ts,
+  # which is the whole mechanism for the second one. They relay to each other over
+  # Redis pub/sub; open the same document on :4100 and :4101 to watch it work.
+  sync:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.sync
+    image: collab-sync
+    container_name: collab-sync
+    profiles: ['app']
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *datastores
+      PORT: ''
+      SYNC_PORT: '4100'
+    ports:
+      - '4100:4100'
+    depends_on: *after-migrate
+
+  sync-2:
+    image: collab-sync
+    container_name: collab-sync-2
+    profiles: ['app']
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *datastores
+      PORT: '4101'
+    ports:
+      - '4101:4101'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      sync:
+        condition: service_started
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+      args:
+        # Baked into the browser bundle, so it must be reachable from the reader's
+        # machine, not from inside this network.
+        NEXT_PUBLIC_SYNC_URL: ${NEXT_PUBLIC_SYNC_URL:-ws://localhost:4100}
+    image: collab-web
+    container_name: collab-web
+    profiles: ['app']
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      PORT: '3000'
+      API_BASE_URL: http://api:4000
+      SYNC_BASE_URL: http://sync:4100
+      SYNC_BASE_URL_2: http://sync-2:4101
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+    ports:
+      - '3000:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+      sync:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

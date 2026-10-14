@@ -1,0 +1,47 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Editor", "x": 0, "y": 0, "w": 1440, "h": 900 },
+    {
+      "file": "Documents.dc.html",
+      "title": "Document list",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Versions.dc.html",
+      "title": "Version history",
+      "x": 0,
+      "y": 1040,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Dark.dc.html",
+      "title": "Dark scheme and sync states",
+      "x": 1560,
+      "y": 1040,
+      "w": 1080,
+      "h": 900
+    },
+    { "file": "Share.dc.html", "title": "Share dialog", "x": 2760, "y": 1040, "w": 760, "h": 800 }
+  ],
+  "annotations": [
+    {
+      "id": "identity",
+      "x": 0,
+      "y": -230,
+      "w": 620,
+      "text": "collab-docs identity: a desk with a page on it.\n\nDesk #e4e8e0 / #171b17. Page #ffffff / #20251f. Accent moss #1a6b3c / #6fca90.\nSpectral for document prose, Karla for UI chrome, Red Hat Mono for ids and sizes. 12px radius.\n\nEvery pair here was measured against WCAG AA before it was drawn, in both schemes."
+    },
+    {
+      "id": "cursors",
+      "x": 700,
+      "y": -230,
+      "w": 620,
+      "text": "Two places colour is not allowed to be the only channel.\n\nCursors: every caret carries a name label, always, not on hover. Eight hues cannot stay apart for a colour-blind reader, and a hover label is invisible to a keyboard user and in a screenshot.\n\nSync state: glyph and word together. See the Dark artboard: the four state colours collapse to a 1.00-1.23 greyscale ratio, so the word is doing the work."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

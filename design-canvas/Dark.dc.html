@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=Karla:wght@400;500;600&family=Red+Hat+Mono:wght@400&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6fca90; } a:hover { color: #8fdaa9; }
+    .ui { font-family: Karla, ui-sans-serif, system-ui, sans-serif; }
+    .prose { font-family: Spectral, ui-serif, Georgia, serif; }
+    .mono { font-family: 'Red Hat Mono', ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</helmet>
+
+<div class="ui" style="width: 1080px; height: 900px; background: #171b17; color: #e7ebe4; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="display: flex; align-items: center; gap: 14px; height: 60px; padding: 0 20px; background: #272d26; border-bottom: 1px solid #333a31; flex-shrink: 0;">
+    <span style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">Migration plan: nightly batch to streaming</span>
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: 999px; background: #12301f; border: 1px solid #6fca90;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#6fca90" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle></svg>
+      <span style="font-size: 12.5px; font-weight: 600; color: #6fca90;">Synced</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: #20251f; border: 1px solid #333a31;">
+      <div style="width: 22px; height: 22px; border-radius: 999px; background: #8ab8ee; color: #0b1a2e; font-size: 10.5px; font-weight: 600; display: flex; align-items: center; justify-content: center;">AR</div>
+      <span style="font-size: 12.5px;">Ana Requena</span>
+    </div>
+    <button style="font-family: inherit; font-size: 13px; font-weight: 600; color: #0b1a10; background: #6fca90; border: 1px solid #6fca90; border-radius: 12px; padding: 8px 16px; cursor: pointer;">Share</button>
+  </div>
+
+  <!-- the four sync states, side by side: this is what the greyscale gate is about -->
+  <div style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #20251f; border-bottom: 1px solid #333a31; flex-shrink: 0;">
+    <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #a4aca0; margin-right: 6px;">Sync state</span>
+
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: 999px; background: #12301f; border: 1px solid #6fca90;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#6fca90" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle></svg>
+      <span style="font-size: 12.5px; font-weight: 600; color: #6fca90;">Synced</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: 999px; background: #272d26; border: 1px solid #727a6f;">
+      <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#a4aca0" stroke-width="3"></circle><path d="M12 4a8 8 0 010 16z" fill="#a4aca0"></path></svg>
+      <span style="font-size: 12.5px; font-weight: 600; color: #a4aca0;">Saving</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: 999px; background: #2e2416; border: 1px solid #e0a93c;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#e0a93c" aria-hidden="true"><path d="M12 3l9 17H3z"></path></svg>
+      <span style="font-size: 12.5px; font-weight: 600; color: #e0a93c;">Offline</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 9px; border-radius: 999px; background: #33201e; border: 1px solid #ff9d94;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff9d94" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 17H3z"></path><path d="M12 10v3M12 16h.01"></path></svg>
+      <span style="font-size: 12.5px; font-weight: 600; color: #ff9d94;">Conflict resolved</span>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 11.5px; color: #a4aca0;">All four collapse to one grey. The word is the channel.</span>
+  </div>
+
+  <div style="flex-grow: 1; overflow: hidden; display: flex; justify-content: center; padding: 32px 0 0 0;">
+    <div style="width: 760px; background: #20251f; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.45), 0 14px 36px rgba(0,0,0,0.5); padding: 52px 72px 80px 72px;">
+      <h1 class="prose" style="margin: 0 0 6px 0; font-size: 30px; font-weight: 600; line-height: 1.22; letter-spacing: -0.015em; color: #e7ebe4;">Migration plan: nightly batch to streaming</h1>
+      <div style="font-size: 12.5px; color: #a4aca0; margin-bottom: 26px;">Draft &nbsp;·&nbsp; last edited 4 minutes ago by Bruno Salas</div>
+
+      <p class="prose" style="margin: 0 0 18px 0; font-size: 17px; line-height: 1.72; color: #e7ebe4;">The nightly batch has been the reconciliation path since 2019, and every incident review since March has ended at the same sentence: the ledger is correct by morning and wrong all afternoon.</p>
+
+      <p class="prose" style="margin: 0 0 18px 0; font-size: 17px; line-height: 1.72; color: #e7ebe4;">The schema stays. The reconciliation rules stay, character for character, because a migration that changes both the transport and the rules cannot be bisected when it goes wrong.<span style="display: inline-block; width: 2px; height: 21px; background: #f0a8cf; vertical-align: -5px; margin: 0 1px; position: relative;"><span class="ui" style="position: absolute; left: -1px; top: -18px; background: #f0a8cf; color: #2b0f20; font-size: 10.5px; font-weight: 600; line-height: 1; padding: 3px 6px; border-radius: 4px 4px 4px 0; white-space: nowrap;">Bruno Salas</span></span></p>
+
+      <h2 class="prose" style="margin: 28px 0 10px 0; font-size: 21px; font-weight: 600; color: #e7ebe4;">Rollout</h2>
+      <ol class="prose" style="margin: 0; padding-left: 22px; font-size: 17px; line-height: 1.72; color: #e7ebe4;">
+        <li style="margin-bottom: 6px;">Shadow writes, no reads. Four weeks.</li>
+        <li>Reads behind a per-tenant flag, starting with internal tenants.</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

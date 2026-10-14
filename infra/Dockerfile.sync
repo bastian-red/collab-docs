@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1.7
+#
+# @docs/sync, multi-stage. Build from the REPO ROOT:
+#   docker build -f infra/Dockerfile.sync -t collab-sync .
+#
+# The same image serves every replica: `PORT` beats `SYNC_PORT` in
+# apps/sync/src/config.ts, which is how compose's `sync-2` answers on 4101 with no
+# second Dockerfile (docs/SPECS.md 2.1).
+
+FROM node:20-bookworm-slim AS base
+# openssl: Prisma's query engine links against it, and bookworm-slim ships without.
+RUN apt-get update -qq \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /repo
+
+# --- fetch: a layer keyed on the lockfile alone ------------------------------
+FROM base AS fetch
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+# --ignore-scripts: simple-git-hooks' postinstall walks up for a package.json this
+# stage has deliberately not copied, and crashes the fetch.
+RUN pnpm fetch --ignore-scripts
+
+# --- build ---------------------------------------------------------------------
+FROM fetch AS build
+COPY . .
+RUN pnpm install --frozen-lockfile --offline --ignore-scripts
+# The Prisma client is generated INTO packages/db/generated (schema.prisma says
+# why), so `pnpm deploy` below carries it along with the package.
+RUN pnpm --filter @docs/db run generate
+RUN pnpm exec turbo run build --filter=@docs/sync...
+
+FROM build AS prod-deps
+RUN pnpm --filter @docs/sync deploy --prod /prod/sync
+RUN test -f /prod/sync/dist/main.js || \
+  (echo "prod-deps: /prod/sync/dist/main.js is missing after pnpm deploy." >&2 && exit 1)
+RUN test -d /prod/sync/node_modules/@docs/db/generated/client || \
+  (echo "prod-deps: the generated Prisma client did not survive pnpm deploy." >&2 && exit 1)
+
+# --- runtime ---------------------------------------------------------------
+FROM node:20-bookworm-slim AS runtime
+RUN apt-get update -qq \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && groupadd --gid 1001 collab \
+  && useradd --uid 1001 --gid collab --shell /usr/sbin/nologin --no-create-home collab
+WORKDIR /app
+COPY --from=prod-deps --chown=collab:collab /prod/sync ./
+USER collab
+ENV NODE_ENV=production
+EXPOSE 4100
+# The healthcheck hits the same process the sockets are on, and /health checks the
+# dependencies for real (docs/SPECS.md 10), so a green container has a live
+# Postgres and Redis behind it.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:'+(process.env.PORT||process.env.SYNC_PORT||4100)+'/health',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+CMD ["node", "dist/main.js"]

@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=Karla:wght@400;500;600&family=Red+Hat+Mono:wght@400&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #1a6b3c; } a:hover { color: #13512d; }
+    .ui { font-family: Karla, ui-sans-serif, system-ui, sans-serif; }
+    .prose { font-family: Spectral, ui-serif, Georgia, serif; }
+    .mono { font-family: 'Red Hat Mono', ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</helmet>
+
+<div class="ui" style="width: 760px; height: 800px; background: #e4e8e0; color: #191d18; display: flex; align-items: center; justify-content: center; padding: 28px; box-sizing: border-box;">
+
+  <div style="width: 100%; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 2px rgba(25,29,24,0.10), 0 20px 48px rgba(25,29,24,0.18); overflow: hidden; display: flex; flex-direction: column;">
+
+    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 22px 24px 18px 24px; border-bottom: 1px solid #d0d6cb;">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <h2 style="margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.012em;">Share this document</h2>
+        <span style="font-size: 13px; color: #4d554a;">Migration plan: nightly batch to streaming</span>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </div>
+
+    <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 20px;">
+
+      <!-- invite -->
+      <div style="display: flex; gap: 9px;">
+        <div style="flex-grow: 1; display: flex; align-items: center; gap: 9px; background: #ffffff; border: 1px solid #767e72; border-radius: 12px; padding: 10px 14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9 6 9-6"></path><rect x="3" y="5" width="18" height="14" rx="2"></rect></svg>
+          <span style="font-size: 13.5px; color: #4d554a;">Add people by email</span>
+        </div>
+        <button style="font-family: inherit; font-size: 13.5px; font-weight: 600; color: #ffffff; background: #1a6b3c; border: 1px solid #1a6b3c; border-radius: 12px; padding: 10px 18px; cursor: pointer;">Invite</button>
+      </div>
+
+      <!-- people -->
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #4d554a; padding-bottom: 6px;">People with access</div>
+
+        <div style="display: flex; align-items: center; gap: 11px; padding: 9px 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 999px; background: #1f5fa8; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;">AR</div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 13.5px; font-weight: 500;">Ana Requena</span>
+            <span style="font-size: 12px; color: #4d554a;">ana@collab.test</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <span style="font-size: 12.5px; font-weight: 600; color: #14562f; background: #dceee2; border-radius: 999px; padding: 5px 12px;">Owner</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 11px; padding: 9px 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 999px; background: #b0407a; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;">BS</div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 13.5px; font-weight: 500;">Bruno Salas</span>
+            <span style="font-size: 12px; color: #4d554a;">bruno@collab.test</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 6px 11px; border: 1px solid #767e72; border-radius: 12px;">
+            <span>Editor</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 11px; padding: 9px 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 999px; background: #0f6b78; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;">CM</div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 13.5px; font-weight: 500;">Clara Mota</span>
+            <span style="font-size: 12px; color: #4d554a;">clara@collab.test</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 6px 11px; border: 1px solid #767e72; border-radius: 12px;">
+            <span>Viewer</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- link -->
+      <div style="display: flex; flex-direction: column; gap: 11px; padding: 16px; background: #eff2ec; border: 1px solid #d0d6cb; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#191d18" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"></path><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"></path></svg>
+          <span style="font-size: 13.5px; font-weight: 600;">Anyone with the link</span>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 6px 11px; border: 1px solid #767e72; border-radius: 12px; background: #ffffff;">
+            <span>Can view</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 9px;">
+          <div class="mono" style="flex-grow: 1; font-size: 12px; color: #191d18; background: #ffffff; border: 1px solid #d0d6cb; border-radius: 12px; padding: 10px 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">localhost:3000/d/8f31c7?s=k4Rt9wQm2vX7</div>
+          <button style="font-family: inherit; font-size: 13px; font-weight: 500; color: #191d18; background: #ffffff; border: 1px solid #767e72; border-radius: 12px; padding: 10px 15px; cursor: pointer;">Copy</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px; padding-top: 2px;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="9"></circle></svg>
+            <span style="font-size: 12.5px; color: #4d554a;">Expires in 7 days</span>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <button style="font-family: inherit; font-size: 12.5px; font-weight: 600; color: #a3231c; background: transparent; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;">Revoke link</button>
+        </div>
+      </div>
+
+      <!-- the honest note: read-only is enforced at the server -->
+      <div style="display: flex; gap: 10px; align-items: flex-start; padding: 13px 15px; background: #dceee2; border-radius: 12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14562f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg>
+        <span style="font-size: 12.5px; line-height: 1.55; color: #14562f;">A viewer's connection is opened read-only by the sync server. Edits from it are dropped before they reach the document, not hidden in the editor.</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

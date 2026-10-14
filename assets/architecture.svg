@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d" font-family="Karla, ui-sans-serif, system-ui, sans-serif">
+  <title id="t">collab-docs architecture</title>
+  <desc id="d">The browser runs TipTap over a Yjs document persisted to IndexedDB. It opens one websocket to a sync replica and talks HTTP only to the Next.js server, which calls the NestJS API and the sync replicas with short-lived service tokens. Two sync replicas relay updates over Redis pub/sub and append every update to a Postgres log; the API reads and writes metadata only.</desc>
+  <style>
+    .bg { fill: #e4e8e0; }
+    .box { fill: #ffffff; stroke: #767e72; stroke-width: 1.5; }
+    .store { fill: #eff2ec; stroke: #767e72; stroke-width: 1.5; }
+    .accent { stroke: #1a6b3c; }
+    .title { font-size: 16px; font-weight: 700; fill: #191d18; }
+    .sub { font-size: 12.5px; fill: #4d554a; }
+    .mono { font-family: 'Red Hat Mono', ui-monospace, monospace; font-size: 12px; fill: #4d554a; }
+    .edge { stroke: #4d554a; stroke-width: 1.5; fill: none; }
+    .ws { stroke: #1a6b3c; stroke-width: 2.5; fill: none; }
+    .label { font-size: 12px; fill: #191d18; }
+    .wlabel { font-size: 12px; font-weight: 700; fill: #1a6b3c; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #171b17; }
+      .box { fill: #20251f; stroke: #727a6f; }
+      .store { fill: #272d26; stroke: #727a6f; }
+      .title, .label { fill: #e7ebe4; }
+      .sub, .mono { fill: #a4aca0; }
+      .edge { stroke: #a4aca0; }
+      .ws { stroke: #6fca90; }
+      .wlabel { fill: #6fca90; }
+      .arrow { fill: #a4aca0; }
+      .warrow { fill: #6fca90; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrow" d="M0,0 L10,5 L0,10 z" fill="#4d554a"/></marker>
+    <marker id="w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="warrow" d="M0,0 L10,5 L0,10 z" fill="#1a6b3c"/></marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+
+  <!-- Browser -->
+  <rect class="box" x="300" y="24" width="360" height="92" rx="12"/>
+  <text class="title" x="320" y="52">Browser</text>
+  <text class="sub" x="320" y="74">TipTap 3 + y-prosemirror over a Yjs doc</text>
+  <text class="sub" x="320" y="94">y-indexeddb: edits survive going offline</text>
+
+  <!-- Next -->
+  <rect class="box" x="40" y="184" width="270" height="104" rx="12"/>
+  <text class="title" x="60" y="212">apps/web  :3000</text>
+  <text class="sub" x="60" y="234">Next.js 16, Auth.js session</text>
+  <text class="sub" x="60" y="254">server components read, actions write</text>
+  <text class="sub" x="60" y="274">mints a 120 s HS256 token per call</text>
+
+  <!-- API -->
+  <rect class="box" x="40" y="352" width="270" height="92" rx="12"/>
+  <text class="title" x="60" y="380">apps/api  :4000</text>
+  <text class="sub" x="60" y="402">NestJS: documents, members, links,</text>
+  <text class="sub" x="60" y="422">folders, search. Never writes text.</text>
+
+  <!-- Sync replicas -->
+  <rect class="box" x="420" y="184" width="230" height="104" rx="12"/>
+  <text class="title" x="440" y="212">apps/sync  :4100</text>
+  <text class="sub" x="440" y="234">Hocuspocus 4.6</text>
+  <text class="sub" x="440" y="254">read-only set at handshake</text>
+  <text class="sub" x="440" y="274">append every update, no timer</text>
+
+  <rect class="box" x="690" y="184" width="230" height="104" rx="12"/>
+  <text class="title" x="710" y="212">apps/sync  :4101</text>
+  <text class="sub" x="710" y="234">same image, PORT=4101</text>
+  <text class="sub" x="710" y="254">a second replica, proven by</text>
+  <text class="sub" x="710" y="274">the integration lane</text>
+
+  <!-- Redis -->
+  <rect class="store" x="560" y="352" width="250" height="64" rx="12"/>
+  <text class="title" x="580" y="380">Redis  :6386</text>
+  <text class="sub" x="580" y="402">pub/sub relay between replicas</text>
+
+  <!-- Postgres -->
+  <rect class="store" x="300" y="470" width="420" height="70" rx="12"/>
+  <text class="title" x="320" y="498">PostgreSQL  :5440</text>
+  <text class="mono" x="320" y="520">document_updates (seq) · documents.state · versions</text>
+
+  <!-- Edges -->
+  <path class="ws" d="M560,116 L540,184" marker-end="url(#w)"/>
+  <text class="wlabel" x="560" y="156">websocket, Yjs protocol</text>
+
+  <path class="edge" d="M330,100 C250,110 200,140 180,184" marker-end="url(#a)"/>
+  <text class="label" x="150" y="140">HTTP (same origin only)</text>
+
+  <path class="edge" d="M175,288 L175,352" marker-end="url(#a)"/>
+  <text class="label" x="184" y="326">Bearer token</text>
+
+  <path class="edge" d="M310,236 L420,236" marker-end="url(#a)"/>
+  <text class="label" x="318" y="228">diff, versions</text>
+
+  <path class="edge" d="M560,288 L640,352" marker-end="url(#a)" marker-start="url(#a)"/>
+  <path class="edge" d="M800,288 L740,352" marker-end="url(#a)" marker-start="url(#a)"/>
+
+  <path class="edge" d="M500,288 L480,470" marker-end="url(#a)"/>
+  <text class="label" x="494" y="440">append, compact</text>
+
+  <path class="edge" d="M175,444 C175,480 230,505 300,505" marker-end="url(#a)"/>
+  <text class="label" x="120" y="480">metadata</text>
+</svg>

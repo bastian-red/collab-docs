@@ -1,0 +1,24 @@
+{
+  // Typecheck for the test files, which `tsconfig.json` deliberately excludes so
+  // they never reach `dist/`.
+  //
+  // They still have to be CHECKED. Vitest transpiles with esbuild and does no
+  // type checking at all, so without this config a test could pass an argument
+  // of the wrong type, assert against a field that no longer exists, or fake an
+  // interface it no longer satisfies -- and stay green. A test that typechecks
+  // nothing is a test whose subject can be renamed out from under it.
+  //
+  // Extends the package's OWN tsconfig rather than the shared base, so per-package
+  // compiler options (`noUncheckedIndexedAccess`, `types`, module settings) apply
+  // to the tests exactly as they apply to the source.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

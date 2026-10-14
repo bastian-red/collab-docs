@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=Karla:wght@400;500;600&family=Red+Hat+Mono:wght@400&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #1a6b3c; } a:hover { color: #13512d; }
+    .ui { font-family: Karla, ui-sans-serif, system-ui, sans-serif; }
+    .prose { font-family: Spectral, ui-serif, Georgia, serif; }
+    .mono { font-family: 'Red Hat Mono', ui-monospace, SFMono-Regular, monospace; }
+  </style>
+</helmet>
+
+<div class="ui" style="width: 1440px; height: 900px; background: #e4e8e0; color: #191d18; display: flex; overflow: hidden;">
+
+  <!-- sidebar -->
+  <div style="width: 264px; flex-shrink: 0; background: #eff2ec; border-right: 1px solid #d0d6cb; display: flex; flex-direction: column; padding: 20px 14px; gap: 22px;">
+    <div style="display: flex; align-items: center; gap: 9px; padding: 0 6px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h9l4 4v12H4z"></path><path d="M13 4v4h4"></path><path d="M8 13h5M8 17h5"></path></svg>
+      <span class="prose" style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">collab</span>
+    </div>
+
+    <button style="font-family: inherit; font-size: 13.5px; font-weight: 600; color: #ffffff; background: #1a6b3c; border: 1px solid #1a6b3c; border-radius: 12px; padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      New document
+    </button>
+
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #4d554a; padding: 0 8px 8px 8px;">Library</div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: #dceee2; font-size: 13.5px; font-weight: 600; color: #14562f;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14562f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"></path></svg>
+        All documents <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; font-weight: 400;">24</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="9"></circle></svg>
+        Recent <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; color: #4d554a;">8</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 11a4 4 0 10-8 0"></path><circle cx="12" cy="7" r="3"></circle><path d="M4 20a8 8 0 0116 0"></path></svg>
+        Shared with me <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; color: #4d554a;">5</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"></path></svg>
+        Trash
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #4d554a; padding: 0 8px 8px 8px;">Folders</div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"></path></svg>
+        Platform <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; color: #4d554a;">9</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"></path></svg>
+        Incident reviews <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; color: #4d554a;">7</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; font-size: 13.5px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6l2 2h8v12H4z"></path></svg>
+        Onboarding <span style="flex-grow: 1;"></span> <span class="mono" style="font-size: 11.5px; color: #4d554a;">4</span>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="display: flex; align-items: center; gap: 9px; padding: 8px; border-top: 1px solid #d0d6cb; padding-top: 14px;">
+      <div style="width: 28px; height: 28px; border-radius: 999px; background: #1f5fa8; color: #ffffff; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; justify-content: center;">AR</div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 13px; font-weight: 500;">Ana Requena</span>
+        <span style="font-size: 11.5px; color: #4d554a;">ana@collab.test</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- main -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 14px; padding: 22px 32px 18px 32px;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.015em;">All documents</h1>
+      <div style="flex-grow: 1;"></div>
+      <div style="display: flex; align-items: center; gap: 9px; background: #ffffff; border: 1px solid #767e72; border-radius: 12px; padding: 9px 14px; width: 340px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <span style="font-size: 13.5px; color: #4d554a;">Search full text</span>
+        <span style="flex-grow: 1;"></span>
+        <span class="mono" style="font-size: 11px; color: #4d554a; border: 1px solid #d0d6cb; border-radius: 6px; padding: 1px 5px;">/</span>
+      </div>
+    </div>
+
+    <div style="padding: 0 32px 32px 32px; overflow: hidden;">
+      <div style="background: #ffffff; border: 1px solid #d0d6cb; border-radius: 12px; overflow: hidden;">
+
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 120px; gap: 16px; padding: 12px 20px; background: #eff2ec; border-bottom: 1px solid #d0d6cb; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4d554a;">
+          <span>Name</span><span>Shared with</span><span>Edited</span><span>Access</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 120px; gap: 16px; padding: 15px 20px; border-bottom: 1px solid #d0d6cb; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8l4 4v14H5z"></path><path d="M13 3v4h4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+              <span style="font-size: 14px; font-weight: 500;">Migration plan: nightly batch to streaming</span>
+              <span style="font-size: 12px; color: #4d554a;">Platform</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 24px; height: 24px; border-radius: 999px; background: #1f5fa8; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff;">AR</div>
+            <div style="width: 24px; height: 24px; border-radius: 999px; background: #b0407a; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; margin-left: -7px;">BS</div>
+            <div style="width: 24px; height: 24px; border-radius: 999px; background: #0f6b78; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; margin-left: -7px;">CM</div>
+            <span style="font-size: 12.5px; color: #4d554a; margin-left: 9px;">3 people</span>
+          </div>
+          <span style="font-size: 13px; color: #4d554a;">4 minutes ago</span>
+          <span style="font-size: 12px; font-weight: 600; color: #14562f; background: #dceee2; border-radius: 999px; padding: 3px 10px; justify-self: start;">Owner</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 120px; gap: 16px; padding: 15px 20px; border-bottom: 1px solid #d0d6cb; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8l4 4v14H5z"></path><path d="M13 3v4h4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+              <span style="font-size: 14px; font-weight: 500;">Incident 2026-08-11: ledger drift after 14:00</span>
+              <span style="font-size: 12px; color: #4d554a;">Incident reviews</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 24px; height: 24px; border-radius: 999px; background: #b0407a; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff;">BS</div>
+            <span style="font-size: 12.5px; color: #4d554a; margin-left: 9px;">Bruno Salas</span>
+          </div>
+          <span style="font-size: 13px; color: #4d554a;">Yesterday</span>
+          <span style="font-size: 12px; font-weight: 600; color: #191d18; background: #eff2ec; border: 1px solid #d0d6cb; border-radius: 999px; padding: 3px 10px; justify-self: start;">Editor</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 120px; gap: 16px; padding: 15px 20px; border-bottom: 1px solid #d0d6cb; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8l4 4v14H5z"></path><path d="M13 3v4h4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+              <span style="font-size: 14px; font-weight: 500;">Runbook: promoting a read replica</span>
+              <span style="font-size: 12px; color: #4d554a;">Platform</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 24px; height: 24px; border-radius: 999px; background: #0f6b78; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff;">CM</div>
+            <span style="font-size: 12.5px; color: #4d554a; margin-left: 9px;">Clara Mota</span>
+          </div>
+          <span style="font-size: 13px; color: #4d554a;">3 days ago</span>
+          <span style="font-size: 12px; font-weight: 600; color: #191d18; background: #eff2ec; border: 1px solid #d0d6cb; border-radius: 999px; padding: 3px 10px; justify-self: start;">Viewer</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 210px 150px 120px; gap: 16px; padding: 15px 20px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4d554a" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8l4 4v14H5z"></path><path d="M13 3v4h4"></path></svg>
+            <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+              <span style="font-size: 14px; font-weight: 500;">Onboarding: week one for platform engineers</span>
+              <span style="font-size: 12px; color: #4d554a;">Onboarding</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <span style="font-size: 12.5px; color: #4d554a;">Only you</span>
+          </div>
+          <span style="font-size: 13px; color: #4d554a;">2 weeks ago</span>
+          <span style="font-size: 12px; font-weight: 600; color: #14562f; background: #dceee2; border-radius: 999px; padding: 3px 10px; justify-self: start;">Owner</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

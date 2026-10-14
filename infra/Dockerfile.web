@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1.7
+#
+# @docs/web (Next.js 16, output: 'standalone'). Build from the REPO ROOT:
+#   docker build -f infra/Dockerfile.web -t collab-web .
+
+FROM node:20-bookworm-slim AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /repo
+
+FROM base AS fetch
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch --ignore-scripts
+
+FROM fetch AS build
+COPY . .
+RUN pnpm install --frozen-lockfile --offline --ignore-scripts
+
+# The one browser-visible URL. Next inlines NEXT_PUBLIC_* by textual substitution
+# at BUILD time, so it is an ARG turned into an ENV before `next build`; a
+# `docker run -e` afterwards does nothing to an already-built bundle. Wrong here
+# means a page that signs in, renders the title, and never shows a word of the
+# document, because the socket retries forever without an error.
+ARG NEXT_PUBLIC_SYNC_URL=ws://localhost:4100
+ENV NEXT_PUBLIC_SYNC_URL=${NEXT_PUBLIC_SYNC_URL}
+
+# AUTH_SECRET is needed at build time only because auth.ts is evaluated while Next
+# enumerates routes. This placeholder is allowlisted in .gitleaks.toml and is never
+# the runtime secret, which comes from the environment the container runs with.
+ENV NODE_ENV=production
+ENV AUTH_SECRET=build-time-placeholder-secret-32chars
+RUN pnpm exec turbo run build --filter=@docs/web...
+RUN mkdir -p apps/web/public
+
+# Standalone output reproduces the monorepo-relative path (outputFileTracingRoot
+# is the repo root), so server.js lands under apps/web/. Asserted, so a wrong
+# assumption is a build failure with a listing rather than an image without it.
+RUN test -f apps/web/.next/standalone/apps/web/server.js || \
+  (echo "build: expected apps/web/.next/standalone/apps/web/server.js. Found:" >&2 \
+   && find apps/web/.next/standalone -maxdepth 3 >&2 && exit 1)
+
+FROM node:20-bookworm-slim AS runtime
+RUN groupadd --gid 1001 collab \
+  && useradd --uid 1001 --gid collab --shell /usr/sbin/nologin --no-create-home collab
+WORKDIR /app
+# Static assets and public/ are excluded from Next's trace by design and copied
+# in beside server.js.
+COPY --from=build --chown=collab:collab /repo/apps/web/.next/standalone ./
+COPY --from=build --chown=collab:collab /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=collab:collab /repo/apps/web/public ./apps/web/public
+USER collab
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+EXPOSE 3000
+# /sign-in rather than /status: the status page probes the other services, so a
+# check pointed at it would mark this container unhealthy for somebody else's
+# outage.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:'+(process.env.PORT||3000)+'/sign-in',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+CMD ["node", "apps/web/server.js"]

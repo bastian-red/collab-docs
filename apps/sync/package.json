@@ -1,0 +1,38 @@
+{
+  "name": "@docs/sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@docs/db": "workspace:*",
+    "@docs/doc-access": "workspace:*",
+    "@docs/doc-store": "workspace:*",
+    "@docs/shared": "workspace:*",
+    "@docs/versioning": "workspace:*",
+    "@hocuspocus/extension-redis": "^4.6.0",
+    "@hocuspocus/server": "^4.6.0",
+    "ioredis": "^5.4.1",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "@docs/config": "workspace:*",
+    "@types/node": "^20.17.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8",
+    "@hocuspocus/provider": "^4.6.0",
+    "ws": "^8.18.0",
+    "@types/ws": "^8.5.13"
+  }
+}
