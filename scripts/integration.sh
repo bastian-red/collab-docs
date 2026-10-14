@@ -24,12 +24,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [[ -f .env ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
-fi
+# Caller env > .env > .env.example (scripts/load-env.sh says why).
+# shellcheck source=scripts/load-env.sh
+. scripts/load-env.sh
 
 export DATABASE_URL="${DATABASE_URL:-postgresql://collab:collab@localhost:5440/collab?schema=public}"
 export REDIS_URL="${REDIS_URL:-redis://localhost:6386}"

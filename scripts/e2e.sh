@@ -39,11 +39,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ -f .env ]]; then
-  set -a
-  . ./.env
-  set +a
-fi
+# Caller env > .env > .env.example (scripts/load-env.sh says why).
+# shellcheck source=scripts/load-env.sh
+. scripts/load-env.sh
 
 export DATABASE_URL="${DATABASE_URL:-postgresql://collab:collab@localhost:5440/collab?schema=public}"
 export DIRECT_DATABASE_URL="${DIRECT_DATABASE_URL:-$DATABASE_URL}"

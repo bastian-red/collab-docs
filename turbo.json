@@ -70,6 +70,15 @@
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
+    // @docs/db's export-map test loads the package's OWN dist through require()
+    // and import, which is the only way to prove the `./documents` subpath really
+    // has no require condition. ^build builds its dependencies, not itself, so on
+    // a fresh clone that test found no dist/ at all. CI caught it; locally a
+    // stale dist hid it.
+    "@docs/db#test": {
+      "dependsOn": ["build", "^build"],
+      "outputs": ["coverage/**"]
+    },
     "test:integration": {
       "dependsOn": ["^build"],
       "cache": false

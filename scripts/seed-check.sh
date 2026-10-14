@@ -44,12 +44,9 @@ cd "$(dirname "$0")/.."
 # scripts/e2e.sh use. Requiring `.env` outright is fine locally and wrong on CI,
 # where the job hands DATABASE_URL in through its `env:` block and never writes a
 # dotenv file.
-if [[ -f .env ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
-fi
+# Caller env > .env > .env.example (scripts/load-env.sh says why).
+# shellcheck source=scripts/load-env.sh
+. scripts/load-env.sh
 
 export DATABASE_URL="${DATABASE_URL:-postgresql://collab:collab@localhost:5440/collab?schema=public}"
 

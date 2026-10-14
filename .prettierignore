@@ -1,0 +1,5 @@
+# Generated, and rewritten by Next on every build in Next's own style. Formatting it
+# here only makes `prettier --check` fail on the next `next build`.
+apps/web/next-env.d.ts
+packages/db/generated/
+design-canvas/
