@@ -84,11 +84,8 @@ export interface PersistenceOptions {
   readonly log?: (message: string) => void;
 }
 
-interface Loaded {
-  readonly documentId: string;
-  /** The listener, kept so it can be removed when the document unloads. */
-  readonly listener: (update: Uint8Array, origin: unknown) => void;
-}
+/** The listener on one Y.Doc instance, kept so it can be removed when that instance unloads. */
+type UpdateListener = (update: Uint8Array, origin: unknown) => void;
 
 export class Persistence implements Extension {
   /**
@@ -100,7 +97,23 @@ export class Persistence implements Extension {
   readonly priority = 100;
   readonly extensionName = 'collab-persistence';
 
-  private readonly loaded = new Map<string, Loaded>();
+  /**
+   * Keyed by the Y.Doc INSTANCE, never by document name.
+   *
+   * One name can have two live instances for a moment: every client leaves,
+   * Hocuspocus begins unloading the document after its store debounce, and a new
+   * client connects inside that window, so a fresh Y.Doc is loaded under the same
+   * name before the old one's beforeUnloadDocument has run. Keyed by name, the
+   * new instance found the old entry and got no listener -- its updates were
+   * applied and broadcast and never logged, which is the one failure this module
+   * exists to make impossible -- and the old instance's unload then deleted
+   * whatever entry the name pointed at. CI found it through the integration
+   * lane's file order; `persistence.test.ts` now provokes both halves directly.
+   *
+   * A WeakMap, so an instance Hocuspocus drops without unloading (a crash path)
+   * does not keep its listener reachable from here.
+   */
+  private readonly loaded = new WeakMap<Y.Doc, UpdateListener>();
   private readonly now: () => number;
   private readonly log: (message: string) => void;
   /** Documents whose append failed, so `onStoreDocument` does not compact over a hole. */
@@ -148,22 +161,24 @@ export class Persistence implements Extension {
    */
   async afterLoadDocument(payload: afterLoadDocumentPayload): Promise<void> {
     const documentId = payload.documentName;
-    if (this.loaded.has(documentId)) return;
+    if (this.loaded.has(payload.document)) return;
 
-    const listener = (update: Uint8Array, origin: unknown): void => {
+    const listener: UpdateListener = (update, origin) => {
       void this.append(documentId, update, origin);
     };
     payload.document.on('update', listener);
-    this.loaded.set(documentId, { documentId, listener });
+    this.loaded.set(payload.document, listener);
   }
 
   /** Stop recording, so a document that unloads does not leak a listener holding it alive. */
   async beforeUnloadDocument(payload: { documentName: string; document: Y.Doc }): Promise<void> {
-    const entry = this.loaded.get(payload.documentName);
-    if (entry === undefined) return;
-    payload.document.off('update', entry.listener);
-    this.loaded.delete(payload.documentName);
-    this.wounded.delete(payload.documentName);
+    const listener = this.loaded.get(payload.document);
+    if (listener === undefined) return;
+    payload.document.off('update', listener);
+    this.loaded.delete(payload.document);
+    // `wounded` stays keyed by name, deliberately left alone here: if a newer
+    // instance of this document is already live, a hole recorded against it must
+    // keep blocking compaction until one of its own appends succeeds.
   }
 
   /**

@@ -291,6 +291,45 @@ describe('the update listener', () => {
 
     expect(repository.logSize(DOCUMENT)).toBe(1);
   });
+
+  it('records a document reloaded while its previous instance is still unloading', async () => {
+    // The race CI found: every client leaves, Hocuspocus starts unloading the
+    // Y.Doc after its store debounce, and a new client connects inside that
+    // window. A new Y.Doc is loaded under the SAME name before the old one's
+    // beforeUnloadDocument has run. Keyed by name, afterLoadDocument saw the
+    // old entry, attached nothing to the new document, and every update to it
+    // was applied, broadcast -- and never written to the log.
+    repository.create(DOCUMENT);
+    const persistence = build();
+    const leaving = new Y.Doc();
+    await persistence.afterLoadDocument(payload(leaving));
+
+    const arriving = new Y.Doc();
+    await persistence.onLoadDocument(payload(arriving));
+    await persistence.afterLoadDocument(payload(arriving));
+    type(arriving, 'typed during the reload', fromConnection(AUTHOR));
+    await settle();
+
+    expect(repository.logSize(DOCUMENT)).toBe(1);
+  });
+
+  it('keeps recording the new instance after the old one finishes unloading', async () => {
+    // The other half of the same race: the old instance's beforeUnloadDocument
+    // arrives last and must detach only ITS listener, not the new document's.
+    repository.create(DOCUMENT);
+    const persistence = build();
+    const leaving = new Y.Doc();
+    await persistence.afterLoadDocument(payload(leaving));
+    const arriving = new Y.Doc();
+    await persistence.afterLoadDocument(payload(arriving));
+    await persistence.beforeUnloadDocument(payload(leaving));
+
+    type(arriving, 'after the old instance left', fromConnection(AUTHOR));
+    type(leaving, 'the old instance is gone', fromConnection(AUTHOR));
+    await settle();
+
+    expect(repository.logSize(DOCUMENT)).toBe(1);
+  });
 });
 
 describe('onStoreDocument', () => {
